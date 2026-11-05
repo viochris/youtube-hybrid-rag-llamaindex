@@ -1,0 +1,69 @@
+# ==============================================================================
+# Dependencies for youtube-hybrid-rag-llamaindex
+# Covers Hybrid-self-make-youtube-reader-cmd.py
+# Python 3.10 or newer is recommended.
+# Versions are left unpinned except where the script needs a specific API, and for torch (see below).
+# If pip reports a resolver conflict, install into a clean virtual environment
+# with a single "pip install -r requirements.txt".
+# ==============================================================================
+
+# --- LlamaIndex core (Settings, Document, VectorStoreIndex, PropertyGraphIndex,
+#     StorageContext, SimpleLLMPathExtractor, SentenceSplitter, SentenceTransformerRerank,
+#     QueryFusionRetriever, ContextChatEngine, Memory, callbacks)
+# The script uses llama_index.core.memory.Memory, so keep this package recent.
+llama-index-core
+
+# --- LlamaIndex integrations imported directly by the script
+llama-index-vector-stores-chroma
+llama-index-graph-stores-neo4j
+llama-index-embeddings-google-genai
+llama-index-llms-litellm
+
+# --- Vector database client (chromadb.CloudClient for Chroma Cloud)
+# The script calls chromadb.CloudClient(api_key=...) without a tenant or a database.
+# That only works from a late 1.0.x release onward (it fails on 1.0.10 and works on 1.0.15).
+# The bound is set at 1.1.0 to stay on the safe side. Older versions require both arguments.
+chromadb>=1.1.0
+
+# --- Neo4j driver
+# Installed together with llama-index-graph-stores-neo4j. It is listed here because the
+# "start over" snippet in the README imports it directly.
+# The Neo4j database itself needs the APOC plugin and vector index support (Neo4j 5.23 or newer).
+# Those live on the database server and cannot be installed with pip.
+neo4j
+
+# --- Transcript fetching
+# The script calls YouTubeTranscriptApi().fetch(...) on an instance, which exists
+# from version 1.0.0 onward. Older versions only offer static methods.
+youtube-transcript-api>=1.0.0
+
+# --- LLM routing and cost tracking (Gemini calls and completion_cost)
+litellm
+
+# --- Token counting (cl100k_base encoder used by TokenCountingHandler)
+# The encoder file is downloaded on first use and cached afterwards.
+tiktoken
+
+# --- Cross-encoder reranker (SentenceTransformerRerank)
+# Not imported by the script directly, but the reranker needs both packages at runtime.
+# The model weights are fetched from Hugging Face on the first run.
+# CPU-only torch, pinned to the version used by the author (2.14.1+cpu).
+# The extra index below lets pip choose the CPU build, so the large NVIDIA CUDA wheels are not downloaded.
+# "==2.14.1" also matches the "+cpu" build, and still works on systems that have no "+cpu" label.
+--extra-index-url https://download.pytorch.org/whl/cpu
+sentence-transformers
+torch==2.14.1
+
+# --- Tracing with Arize Phoenix (phoenix.otel.register and the LlamaIndex instrumentor)
+arize-phoenix-otel
+openinference-instrumentation-llama-index
+
+# --- Async PostgreSQL driver for the chat memory (ASYNCPG_DATABASE_URL)
+# SQLAlchemy, which Memory also needs, is installed with llama-index-core.
+asyncpg
+
+# --- Utilities
+# Loads the .env file
+python-dotenv
+# Allows asyncio.run() to work inside already running event loops (CLI and Jupyter)
+nest-asyncio
